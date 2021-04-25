@@ -1,4 +1,7 @@
+import 'package:bitcoin_ticker/coin_data.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'dart:io' show Platform;
 
 class PriceScreen extends StatefulWidget {
   @override
@@ -27,7 +30,10 @@ class _PriceScreenState extends State<PriceScreen> {
                 borderRadius: BorderRadius.circular(10.0),
               ),
               child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
+                padding: EdgeInsets.symmetric(
+                  vertical: 15.0,
+                  horizontal: 28.0,
+                ),
                 child: Text(
                   '1 BTC = ? USD',
                   textAlign: TextAlign.center,
@@ -44,37 +50,51 @@ class _PriceScreenState extends State<PriceScreen> {
             alignment: Alignment.center,
             padding: EdgeInsets.only(bottom: 30.0),
             color: Colors.lightBlue,
-            child: DropdownButton<String>(
-              items: [
-                DropdownMenuItem(
-                  child: Text(
-                    'USD',
-                  ),
-                  value: 'USD',
-                ),
-                DropdownMenuItem(
-                  child: Text(
-                    'EUR',
-                  ),
-                  value: 'EUR',
-                ),
-                DropdownMenuItem(
-                  child: Text(
-                    'INR',
-                  ),
-                  value: 'INR',
-                ),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  selectedCurrency = value!;
-                });
-              },
-              value: selectedCurrency,
-            ),
+            child: Platform.isIOS ? getIOSPicker() : getAndroidPicker(),
           ),
         ],
       ),
+    );
+  }
+
+  CupertinoPicker getIOSPicker() {
+    var pickerItems = [
+      for (var currency in currenciesList)
+        Text(
+          currency,
+        ),
+    ];
+    return CupertinoPicker(
+      backgroundColor: Colors.lightBlue,
+      children: pickerItems,
+      itemExtent: 32,
+      onSelectedItemChanged: (value) {
+        setState(() {
+          selectedCurrency = currenciesList[value];
+        });
+      },
+    );
+  }
+
+  DropdownButton getAndroidPicker() {
+    var dropdownItems = [
+      for (var currency in currenciesList)
+        DropdownMenuItem(
+          child: Text(
+            currency,
+          ),
+          value: currency,
+        ),
+    ];
+
+    return DropdownButton<String>(
+      items: dropdownItems,
+      onChanged: (value) {
+        setState(() {
+          selectedCurrency = value!;
+        });
+      },
+      value: selectedCurrency,
     );
   }
 }
