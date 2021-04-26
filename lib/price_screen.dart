@@ -9,7 +9,28 @@ class PriceScreen extends StatefulWidget {
 }
 
 class _PriceScreenState extends State<PriceScreen> {
-  String selectedCurrency = 'USD';
+  String selectedCurrency = currenciesList.first;
+  Map<String, String> exchangeRates = {};
+  bool isFetching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    getData();
+  }
+
+  Future<void> getData() async {
+    isFetching = true;
+    try {
+      var data = await CoinData().getCoinData(selectedCurrency);
+      isFetching = false;
+      setState(() {
+        exchangeRates = data;
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,29 +42,15 @@ class _PriceScreenState extends State<PriceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
-            child: Card(
-              color: Colors.lightBlueAccent,
-              elevation: 5.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  vertical: 15.0,
-                  horizontal: 28.0,
+          Column(
+            children: [
+              for (var crypto in cryptoList)
+                CoinsListItem(
+                  crypto: crypto,
+                  selectedCurrency: selectedCurrency,
+                  rate: isFetching ? '?' : exchangeRates[crypto]!,
                 ),
-                child: Text(
-                  '1 BTC = ? USD',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+            ],
           ),
           Container(
             height: 150.0,
@@ -69,11 +76,17 @@ class _PriceScreenState extends State<PriceScreen> {
       children: pickerItems,
       itemExtent: 32,
       onSelectedItemChanged: (value) {
-        setState(() {
-          selectedCurrency = currenciesList[value];
-        });
+        var selected = currenciesList[value];
+        onSelectCurrency(selected);
       },
     );
+  }
+
+  void onSelectCurrency(String selected) async {
+    setState(() {
+      selectedCurrency = selected;
+      getData();
+    });
   }
 
   DropdownButton getAndroidPicker() {
@@ -90,11 +103,50 @@ class _PriceScreenState extends State<PriceScreen> {
     return DropdownButton<String>(
       items: dropdownItems,
       onChanged: (value) {
-        setState(() {
-          selectedCurrency = value!;
-        });
+        onSelectCurrency(value!);
       },
       value: selectedCurrency,
+    );
+  }
+}
+
+class CoinsListItem extends StatelessWidget {
+  final String crypto;
+  final String selectedCurrency;
+  final String rate;
+
+  const CoinsListItem({
+    Key? key,
+    required this.rate,
+    required this.crypto,
+    required this.selectedCurrency,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
+      child: Card(
+        color: Colors.lightBlueAccent,
+        elevation: 5.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: 15.0,
+            horizontal: 28.0,
+          ),
+          child: Text(
+            '1 $crypto = $rate $selectedCurrency',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20.0,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
